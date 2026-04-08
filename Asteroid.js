@@ -1,16 +1,13 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-const player = {
+const canvas = document.getElementById("canvasJuego");
+const contexto = canvas.getContext("2d");
+const nave = {
   width: 50,
   height: 20,
   x: canvas.width / 2 - 25,
   y: canvas.height - 40
 };
-
-function drawPlayer() {
-  ctx.fillStyle = "white";
-  ctx.fillRect(player.x, player.y, player.width, player.height);
+function dibujarNave() {
+  contexto.fillStyle = "white";
+  contexto.fillRect(nave.x, nave.y, nave.width, nave.height);
 }
-
-drawPlayer();
+dibujarNave();
