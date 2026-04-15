@@ -13,13 +13,11 @@ const nave = {
 let girarIzquierda = false;
 let girarDerecha = false;
 let acelerar = false;
-
 document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft") girarIzquierda = true;
   if (e.key === "ArrowRight") girarDerecha = true;
   if (e.key === "ArrowUp") acelerar = true;
 });
-
 document.addEventListener("keyup", (e) => {
   if (e.key === "ArrowLeft") girarIzquierda = false;
   if (e.key === "ArrowRight") girarDerecha = false;
@@ -46,21 +44,16 @@ function actualizarNave() {
 }
 
 function dibujarNave() {
-
   contexto.save(); 
-
   contexto.translate(nave.x, nave.y); 
   contexto.rotate(nave.angulo);       
-
   contexto.beginPath();
   contexto.moveTo(15, 0);  
   contexto.lineTo(-10, 10);
   contexto.lineTo(-10, -10);
   contexto.closePath();
-
   contexto.fillStyle = "white";
   contexto.fill();
-
   contexto.restore(); 
 }
 
@@ -72,8 +65,6 @@ function bucleJuego() {
   limpiarCanvas();
   actualizarNave();
   dibujarNave();
-
   requestAnimationFrame(bucleJuego);
 }
-
 bucleJuego();
