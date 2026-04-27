@@ -1,198 +1,102 @@
 const canvas = document.getElementById("canvasJuego");
-const contexto = canvas.getContext("2d");
-const nave = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
-  angulo: 0,
-  velocidad: 0,
-  aceleracion: 0.1,
-  rotacion: 0.05,
-  friccion: 0.98,
-  radio: 10
-};
+const ctx = canvas.getContext("2d");
+let miNave = {
+  x: canvas.width/2,
+  y: canvas.height/2,
+  ang: 0,
+  vel: 0};
 let asteroides = [];
-let juegoTerminado = false;
-let enExplosion = false;
-let tiempoExplosion = 0;
-let velocidadAsteroides = 1;
-let puntuacion = 0;
-let girarIzquierda = false;
-let girarDerecha = false;
-let acelerar = false;
+let terminado = false;
+let izq=false, der=false, arriba=false;
+document.addEventListener("keydown",function(e){
+  if(e.key=="ArrowLeft") izq=true;
+  if(e.key=="ArrowRight") der=true;
+  if(e.key=="ArrowUp") arriba=true;});
+document.addEventListener("keyup",function(e){
+  if(e.key=="ArrowLeft") izq=false;
+  if(e.key=="ArrowRight") der=false;
+  if(e.key=="ArrowUp") arriba=false;});
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft") girarIzquierda = true;
-  if (e.key === "ArrowRight") girarDerecha = true;
-  if (e.key === "ArrowUp") acelerar = true;
-  if (e.key === "Enter" && juegoTerminado) {
-    reiniciarJuego();
-  }
-});
-document.addEventListener("keyup", (e) => {
-  if (e.key === "ArrowLeft") girarIzquierda = false;
-  if (e.key === "ArrowRight") girarDerecha = false;
-  if (e.key === "ArrowUp") acelerar = false;
-});
+function moverNave(){
+  if(izq) miNave.ang-=0.05;
+  if(der) miNave.ang+=0.05;
+  if(arriba){
+    miNave.vel+=0.1;}
+  miNave.vel*=0.98;
+  miNave.x+=Math.cos(miNave.ang)*miNave.vel;
+  miNave.y+=Math.sin(miNave.ang)*miNave.vel;
+  if(miNave.x<0) miNave.x=0;
+  if(miNave.x>canvas.width) miNave.x=canvas.width;
+  if(miNave.y<0) miNave.y=0;
+  if(miNave.y>canvas.height) miNave.y=canvas.height;}
 
-function actualizarNave() {
-  if (girarIzquierda) nave.angulo -= nave.rotacion;
-  if (girarDerecha) nave.angulo += nave.rotacion;
-  if (acelerar) nave.velocidad += nave.aceleracion;
-  nave.velocidad *= nave.friccion;
-  nave.x += Math.cos(nave.angulo) * nave.velocidad;
-  nave.y += Math.sin(nave.angulo) * nave.velocidad;
-  if (nave.x < 0) nave.x = 0;
-  if (nave.x > canvas.width) nave.x = canvas.width;
-  if (nave.y < 0) nave.y = 0;
-  if (nave.y > canvas.height) nave.y = canvas.height;
-}
+function mostrarNave(){
+  ctx.save();
+  ctx.translate(miNave.x,miNave.y);
+  ctx.rotate(miNave.ang);
+  ctx.beginPath();
+  ctx.moveTo(15,0);
+  ctx.lineTo(-10,10);
+  ctx.lineTo(-10,-10);
+  ctx.closePath();
+  ctx.fillStyle="white";
+  ctx.fill();
+  ctx.restore();}
 
-function dibujarNave() {
-  contexto.save();
-  contexto.translate(nave.x, nave.y);
-  contexto.rotate(nave.angulo);
-  contexto.beginPath();
-  contexto.moveTo(15, 0);
-  contexto.lineTo(-10, 10);
-  contexto.lineTo(-10, -10);
-  contexto.closePath();
-  contexto.fillStyle = "white";
-  contexto.fill();
-  contexto.restore();
-}
-
-function crearAsteroide() {
-  const tamaño = Math.random() * 50 + 10;
-  const puntos = [];
-  for (let i = 0; i < 8; i++) {
-    puntos.push(Math.random() * tamaño);
-  }
+function nuevoAsteroide(){
+  let r=Math.random()*30+10;
   asteroides.push({
-    x: Math.random() * canvas.width,
-    y: -20,
-    radio: tamaño,
-    velocidad: velocidadAsteroides + Math.random(),
-    forma: puntos
-  });
+    x:Math.random()*canvas.width,
+    y:-20,
+    r:r,
+    v:Math.random()*2+1});
 }
 
-function dibujarAsteroides() {
-  contexto.strokeStyle = "gray";
-  asteroides.forEach(a => {
-    contexto.beginPath();
-    for (let i = 0; i < a.forma.length; i++) {
-      let angulo = (Math.PI * 2 / a.forma.length) * i;
-      let r = a.forma[i];
-      let x = a.x + Math.cos(angulo) * r;
-      let y = a.y + Math.sin(angulo) * r;
-      if (i === 0) contexto.moveTo(x, y);
-      else contexto.lineTo(x, y);
-    }
-    contexto.closePath();
-    contexto.stroke();
-  });
+function moverAsteroides(){
+  for(let i=0;i<asteroides.length;i++){
+    asteroides[i].y+=asteroides[i].v;}
 }
 
-function actualizarAsteroides() {
-  asteroides.forEach(a => {
-    a.y += a.velocidad;
-  });
-  asteroides = asteroides.filter(a => a.y < canvas.height + 50);
+function pintarAsteroide(){
+  ctx.fillStyle="gray";
+  for(let i=0;i<asteroides.length;i++){
+    ctx.beginPath();
+    ctx.arc(asteroides[i].x,asteroides[i].y,asteroides[i].r,0,Math.PI*2);
+    ctx.fill();}
 }
 
-function detectarColisiones() {
-  for (let a of asteroides) {
-    let dx = nave.x - a.x;
-    let dy = nave.y - a.y;
-    let distancia = Math.sqrt(dx * dx + dy * dy);
-    if (distancia < nave.radio + a.radio) {
-      enExplosion = true;
-    }
+function choque(){
+  for(let i=0;i<asteroides.length;i++){
+    let dx=miNave.x-asteroides[i].x;
+    let dy=miNave.y-asteroides[i].y;
+    let d=Math.sqrt(dx*dx+dy*dy);
+    if(d<asteroides[i].r+10){
+      terminado=true;}
   }
 }
 
-function dibujarExplosion() {
-  contexto.fillStyle = "orange";
-  for (let i = 0; i < 10; i++) {
-    contexto.beginPath();
-    contexto.arc(
-      nave.x + (Math.random() * 30 - 15),
-      nave.y + (Math.random() * 30 - 15),
-      Math.random() * 5,
-      0,
-      Math.PI * 2
-    );
-    contexto.fill();
-  }
-}
+function limpiar(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);}
 
-function dibujarScore() {
-  contexto.fillStyle = "white";
-  contexto.font = "14px 'Press Start 2P'";
-  contexto.textAlign = "left";
-  contexto.fillText("Score: " + puntuacion, 20, 30);
-}
+function finJuego(){
+  ctx.fillStyle="red";
+  ctx.font="30px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("GAME OVER",canvas.width/2,canvas.height/2);}
 
-function limpiarCanvas() {
-  contexto.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function dibujarGameOver() {
-  contexto.fillStyle = "red";
-  contexto.font = "30px 'Press Start 2P'";
-  contexto.textAlign = "center";
-  contexto.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-  contexto.fillStyle = "white";
-  contexto.font = "14px 'Press Start 2P'";
-  contexto.fillText(
-    "Presiona ENTER para reiniciar",
-    canvas.width / 2,
-    canvas.height / 2 + 40
-  );
-}
-
-function reiniciarJuego() {
-  nave.x = canvas.width / 2;
-  nave.y = canvas.height / 2;
-  nave.angulo = 0;
-  nave.velocidad = 0;
-  asteroides = [];
-  velocidadAsteroides = 1;
-  puntuacion = 0;
-  juegoTerminado = false;
-  enExplosion = false;
-  tiempoExplosion = 0;
-}
-
-function bucleJuego() {
-  limpiarCanvas();
-  if (!juegoTerminado) {
-    actualizarNave();
-    actualizarAsteroides();
-    puntuacion++;
-    if (!enExplosion) {
-      detectarColisiones();
-      dibujarNave();
-    } else {
-      dibujarExplosion();
-      tiempoExplosion++;
-      if (tiempoExplosion > 60) {
-        juegoTerminado = true;
-      }
-    }
-    dibujarAsteroides();
-    dibujarScore();
-  } else {
-    dibujarGameOver();
-  }
-  requestAnimationFrame(bucleJuego);
-}
-
-setInterval(() => {
-  if (!juegoTerminado) {
-    crearAsteroide();
-    velocidadAsteroides += 0.05;
-  }
-}, 1000);
-
-bucleJuego();
+function bucle(){
+  limpiar();
+  if(!terminado){
+    moverNave();
+    moverAsteroides();
+    choque();
+    mostrarNave();
+    pintarAsteroide();
+  }else{
+    finJuego();}
+  requestAnimationFrame(bucle);}
+setInterval(function(){
+  if(!terminado){
+    nuevoAsteroide();}
+},1000);
+bucle();
